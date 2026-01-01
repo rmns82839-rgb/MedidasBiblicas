@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BibliaMetrics Pro - Herramienta de Estudio</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="modalSincronia" class="modal" style="display:none;">
+        <div class="modal-content animate-pop">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h2 style="margin:0; color:var(--primary);">🌍 Sincronía con Imperios</h2>
+                <span onclick="cerrarSincronia()" style="cursor:pointer; font-size:2rem;">&times;</span>
+            </div>
+            
+            <input type="text" id="searchSync" placeholder="🔍 Buscar imperio o año (ej: 931 o Asiria)..." onkeyup="filtrarSincronia()" style="margin-bottom:15px;">
+            
+            <div class="filter-group" style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                <button class="filter-chip" onclick="filtrarRapido('Asiria')">🏛️ Asiria</button>
+                <button class="filter-chip" onclick="filtrarRapido('Babilonia')">🦁 Babilonia</button>
+                <button class="filter-chip" onclick="filtrarRapido('Egipto')">🏺 Egipto</button>
+                <button class="filter-chip" onclick="filtrarRapido('')">🔄 Todo</button>
+            </div>
+
+            <div class="table-responsive" style="overflow-x:auto;">
+                <table class="sync-table" style="width:100%; border-collapse: collapse; font-size: 0.85rem; min-width: 550px;">
+                    <thead>
+                        <tr style="background:var(--accent); color:white;">
+                            <th style="padding:10px;">Año</th>
+                            <th style="padding:10px;">Suceso en Judá/Israel</th>
+                            <th style="padding:10px;">Imperio</th>
+                            <th style="padding:10px;">Líder Extranjero</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodySincronia">
+                        </tbody>
+                </table>
+            </div>
+            <p style="font-size: 0.7rem; color: gray; margin-top: 10px; text-align: center;">↔️ Desliza para ver cronología imperial</p>
+        </div>
+    </div>
+
+    <button id="btnSabiduriaManual" onclick="lanzarAlertaSabiduria()" class="floating-wisdom-btn" title="Dato curioso del mes">
+        💡
+    </button>
+
+    <button class="floating-menu-trigger" onclick="toggleMenuPrincipal()" id="menuTrigger" style="position: fixed; top: 20px; right: 20px; z-index: 1001; padding: 10px 20px; border-radius: 50px; background: var(--primary); color: white; border: none; cursor: pointer; box-shadow: var(--shadow); font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        ⚙️ <span>Herramientas</span>
+    </button>
+
+    <div class="container">
+        <div class="top-actions" id="panelAcciones" style="display: none; flex-direction: column; gap: 12px; background: var(--glass); backdrop-filter: blur(15px); padding: 20px; border-radius: var(--border-radius-lg); box-shadow: var(--shadow); margin-bottom: 25px; border: 1px solid rgba(212, 163, 115, 0.2); transition: all 0.3s ease;">
+            
+            <a href="https://rmns82839-rgb.github.io/bosquejo2.0" target="_blank" class="action-btn" style="text-decoration:none; background: var(--premium-gradient); color:white; border:none; display:flex; align-items:center; justify-content: center; width: 100%;">
+                📜 Bosquejos 2.0
+            </a>
+
+            <div id="studyTimer" class="timer-badge" onclick="lanzarAlertaSabiduria()" style="cursor:pointer; background: rgba(0,0,0,0.05); color: var(--primary); text-align: center; padding: 10px; border-radius: 12px; font-size: 1.2rem; font-family: monospace;">
+                ⏳ <span id="timerClock">00:00</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                <button onclick="mostrarResumenMensual()" id="btnResumen" class="action-btn">📍 Guía del Mes</button>
+                <button onclick="abrirSincronia()" class="action-btn">📊 Sincronía</button>
+                <button onclick="toggleDarkMode()" id="darkBtn" class="action-btn">🌙 Modo Noche</button>
+                <button onclick="window.print()" class="action-btn print-btn">🖨️ PDF</button>
+            </div>
+        </div>
+
+        <header id="mainHeader">
+            <h1>⚖️ BibliaMetrics Pro</h1>
+            <p>Conversor de medidas, cronología completa y calendario bíblico</p>
+        </header>
+
+        <main id="seccionConversor" class="card">
+    <h3>🔄 Conversor de Medidas</h3>
+    <div class="input-group">
+        <label>1. Categoría:</label>
+        <select id="categorySelector">
+            <option value="longitud">📏 Medidas Lineales (Geometría)</option>
+            <option value="capacidad_solidos">🌾 Capacidad (Sólidos/Áridos)</option>
+            <option value="capacidad_liquidos">🏺 Capacidad (Líquidos)</option>
+            <option value="monedas_y_pesos">💰 Monedas y Pesos (Metales)</option>
+            <option value="tiempos_y_vigilias">⏰ Tiempo y Vigilias</option>
+            <option value="viajes_y_distancias">👣 Viajes y Distancias</option>
+        </select>
+    </div>
+    <div class="input-group">
+        <label>2. Unidad Bíblica:</label>
+        <select id="unitSelector"></select>
+    </div>
+    <div class="input-group">
+        <label>3. Cantidad:</label>
+        <input type="number" id="inputValue" value="1" min="0">
+    </div>
+    <div id="resultDisplay" class="result-box">
+        <span id="labelEquivalencia">Equivale a:</span>
+        <h2 id="finalResult">--</h2>
+        <p id="contextText">Selecciona una unidad para empezar.</p>
+        
+    </div>
+</main>
+
+        <section class="card">
+            <h3>👑 Monitor de Reyes y Profetas</h3>
+            <p><small>Cronología exacta basada en registros bíblicos</small></p>
+            
+            <div class="input-group">
+                <label>1. Reino Unido (Saúl, David, Salomón):</label>
+                <select id="selectUnido" class="king-select" onchange="mostrarFichaDetallada('unido', this.value)">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="0">Saúl (1050-1010 a.C.)</option>
+                    <option value="1">David (1010-970 a.C.)</option>
+                    <option value="2">Salomón (970-930 a.C.)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>2. Reino de Judá (Sur - Jerusalén):</label>
+                <select id="selectJuda" class="king-select" onchange="mostrarFichaDetallada('juda', this.value)">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="0">Roboam (931-913 a.C.)</option>
+                    <option value="1">Abías (913-911 a.C.)</option>
+                    <option value="2">Asa (911-870 a.C.)</option>
+                    <option value="3">Josafat (870-848 a.C.)</option>
+                    <option value="4">Joram (848-841 a.C.)</option>
+                    <option value="5">Ocozías (841 a.C.)</option>
+                    <option value="6">Atalía (841-835 a.C.)</option>
+                    <option value="7">Joás (835-796 a.C.)</option>
+                    <option value="8">Amasías (796-767 a.C.)</option>
+                    <option value="9">Uzías / Azarías (767-740 a.C.)</option>
+                    <option value="10">Jotam (748-732 a.C.)</option>
+                    <option value="11">Acaz (732-716 a.C.)</option>
+                    <option value="12">Ezequías (716-687 a.C.)</option>
+                    <option value="13">Manasés (687-642 a.C.)</option>
+                    <option value="14">Amón (642-640 a.C.)</option>
+                    <option value="15">Josías (640-608 a.C.)</option>
+                    <option value="16">Joacaz (608 a.C.)</option>
+                    <option value="17">Joacim (608-597 a.C.)</option>
+                    <option value="18">Joaquín (597 a.C.)</option>
+                    <option value="19">Sedequías (597-586 a.C.)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>3. Reino de Israel (Norte - Samaria):</label>
+                <select id="selectIsrael" class="king-select" onchange="mostrarFichaDetallada('israel', this.value)">
+                    <option value="">-- Seleccionar --</option>
+                    <option value="0">Jeroboam I (931-910 a.C.)</option>
+                    <option value="1">Nadab (910-909 a.C.)</option>
+                    <option value="2">Baasa (909-886 a.C.)</option>
+                    <option value="3">Ela (886-885 a.C.)</option>
+                    <option value="4">Zimri (885 a.C.)</option>
+                    <option value="5">Omri (885-874 a.C.)</option>
+                    <option value="6">Acab (874-853 a.C.)</option>
+                    <option value="7">Ocozías (853-852 a.C.)</option>
+                    <option value="8">Joram (852-841 a.C.)</option>
+                    <option value="9">Jehú (841-814 a.C.)</option>
+                    <option value="10">Joacaz (814-798 a.C.)</option>
+                    <option value="11">Joás (798-782 a.C.)</option>
+                    <option value="12">Jeroboam II (782-753 a.C.)</option>
+                    <option value="13">Zacarías (753-752 a.C.)</option>
+                    <option value="14">Salum (752 a.C.)</option>
+                    <option value="15">Manahem (752-742 a.C.)</option>
+                    <option value="16">Pekaía (742-740 a.C.)</option>
+                    <option value="17">Peka (752-732 a.C.)</option>
+                    <option value="18">Oseas (732-722 a.C.)</option>
+                </select>
+            </div>
+
+            <div id="kingDetails" class="result-box-small" style="display:none; border-left: 5px solid var(--accent);">
+            </div>
+
+            <div id="compareContainer" style="display:none; gap:15px; margin-top:15px; flex-direction: row; flex-wrap: wrap;">
+                <div id="fichaA" class="card-mini" style="flex:1; min-width: 250px;"></div>
+                <div id="fichaB" class="card-mini" style="flex:1; min-width: 250px;"></div>
+            </div>
+
+            <button onclick="toggleComparacion()" id="btnComparar" class="action-btn" style="width:100%; margin-top:15px; border: 1px dashed var(--accent);">
+                ⚖️ Activar Comparación Dual
+            </button>
+            
+            <button onclick="exportarFichaEstudio()" id="btnExportarFicha" class="copy-btn" style="display:none; background:var(--primary);">
+                📝 Copiar Ficha de Estudio
+            </button>
+        </section>
+
+        <section class="card calendar-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>📅 Calendario Sagrado</h3>
+                <button onclick="toggleEstudio()" id="estudioBtn" class="action-btn" style="font-size:0.7rem;">📖 Modo Estudio</button>
+            </div>
+            <div id="sugerenciaEstudio" style="font-size:0.8rem; color:var(--accent); margin-bottom:10px;"></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </section>
+
+<section class="card">
+    <details class="main-accordion">
+        <summary class="main-summary">
+            <span>📅 EXPLORAR CALENDARIO Y EFEMÉRIDES</span>
+            <span class="badge">12 Meses</span>
+        </summary>
+
+        <div class="accordion-container">
+            <details class="month-detail">
+                <summary>1. Nisán (Marzo - Abril)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 1, 1446 a.C:</b> Inicio del año religioso (Éxodo 12:2).</li>
+                        <li><b>Día 10, 33 d.C:</b> Entrada Triunfal de Jesús (Mateo 21:1-11).</li>
+                        <li><b>Día 14, 1446 a.C:</b> Primera Pascua y salida de Egipto (Éxodo 12:6).</li>
+                        <li><b>Día 14, 33 d.C:</b> Crucifixión de Jesús (Marcos 15:37).</li>
+                        <li><b>Día 16, 33 d.C:</b> Resurrección de Cristo (Lucas 24).</li>
+                        <li><b>Día 17, 2348 a.C:</b> El Arca de Noé reposa en Ararat (Génesis 8:4).</li>
+                        <li><b>Dato:</b> Mes de la liberación y la primavera.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>2. Iyar (Abril - Mayo)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 2, 966 a.C:</b> Salomón inicia el Primer Templo (2 Crónicas 3:2).</li>
+                        <li><b>Día 10, 2348 a.C:</b> Noé entra al Arca (Génesis 7:10).</li>
+                        <li><b>Día 15, 1446 a.C:</b> Cae el Maná por primera vez (Éxodo 16).</li>
+                        <li><b>Día 17, 2348 a.C:</b> Comienza el Gran Diluvio (Génesis 7:11).</li>
+                        <li><b>Día 20, 1445 a.C:</b> Israel parte del Sinaí (Números 10:11).</li>
+                        <li><b>Día 27, 33 d.C:</b> Ascensión de Jesús al cielo (Hechos 1:3-9).</li>
+                        <li><b>Dato:</b> Conocido como el mes del resplandor.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>3. Siván (Mayo - Junio)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 6, 1446 a.C:</b> Entrega de la Ley en Sinaí (Éxodo 19).</li>
+                        <li><b>Día 6, 33 d.C:</b> Pentecostés y el Espíritu Santo (Hechos 2:1).</li>
+                        <li><b>Día 23, 474 a.C:</b> Decreto de Mardoqueo (Ester 8:9).</li>
+                        <li><b>Día 1, 1445 a.C:</b> Primer censo de las tribus (Números 1).</li>
+                        <li><b>Día 14, 586 a.C:</b> Muros de Jerusalén bajo asedio (Jeremías 39).</li>
+                        <li><b>Día 25, 1446 a.C:</b> Victoria sobre Amalec (Éxodo 17).</li>
+                        <li><b>Dato:</b> Mes de la cosecha del trigo.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>4. Tamuz (Junio - Julio)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 3, 1405 a.C:</b> El sol se detuvo en Gabaón (Josué 10:12).</li>
+                        <li><b>Día 9, 586 a.C:</b> Babilonia rompe el muro (Jeremías 39:2).</li>
+                        <li><b>Día 17, 1446 a.C:</b> Moisés rompe las Tablas (Éxodo 32:19).</li>
+                        <li><b>Día 17, 70 d.C:</b> Cesa el sacrificio diario en el Templo.</li>
+                        <li><b>Día 1, 1445 a.C:</b> Espías enviados a Canaán (Números 13).</li>
+                        <li><b>Día 18, 1446 a.C:</b> Purificación del becerro de oro.</li>
+                        <li><b>Dato:</b> Mes de luto por la ciudad invadida.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>5. Ab (Julio - Agosto)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 1, 1406 a.C:</b> Muerte de Aarón en el monte Hor (Números 33:38).</li>
+                        <li><b>Día 9, 586 a.C:</b> Destrucción del Primer Templo (Jeremías 52:12).</li>
+                        <li><b>Día 9, 70 d.C:</b> Destrucción del Segundo Templo por Roma.</li>
+                        <li><b>Día 10, 586 a.C:</b> El Templo arde completamente.</li>
+                        <li><b>Día 24, 458 a.C:</b> Esdras llega a Jerusalén (Esdras 7:9).</li>
+                        <li><b>Día 15, 1405 a.C:</b> Fin de la prohibición de bodas intertribales.</li>
+                        <li><b>Dato:</b> El mes más triste del calendario judío.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>6. Elul (Agosto - Septiembre)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 1, 1446 a.C:</b> Moisés sube al Sinaí por 3ra vez (Éxodo 34:1).</li>
+                        <li><b>Día 1, 520 a.C:</b> Profecía de Hageo sobre el Templo (Hageo 1:1).</li>
+                        <li><b>Día 25, 444 a.C:</b> Nehemías termina los muros (Nehemías 6:15).</li>
+                        <li><b>Día 17, 1405 a.C:</b> Muerte de los 10 espías incrédulos (Números 14:37).</li>
+                        <li><b>Día 24, 520 a.C:</b> Reinicio del Segundo Templo (Hageo 1:15).</li>
+                        <li><b>Día 7, 1405 a.C:</b> Informe negativo de los espías.</li>
+                        <li><b>Dato:</b> Mes de preparación espiritual para el juicio.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>7. Tisri (Septiembre - Octubre)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 1, 444 a.C:</b> Esdras lee la Ley (Nehemías 8:1).</li>
+                        <li><b>Día 10, Anual:</b> Yom Kippur, día del perdón (Levítico 16).</li>
+                        <li><b>Día 15, 959 a.C:</b> Salomón dedica el Templo (1 Reyes 8:2).</li>
+                        <li><b>Día 1, 3761 a.C:</b> Tradición de la creación de Adán.</li>
+                        <li><b>Día 15, Anual:</b> Fiesta de los Tabernáculos (Levítico 23:34).</li>
+                        <li><b>Día 22, Anual:</b> El Último Gran Día de la fiesta (Juan 7:37).</li>
+                        <li><b>Dato:</b> Mes con más festividades sagradas.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>8. Jesván (Octubre - Noviembre)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 8, 959 a.C:</b> Fin de la obra del Templo de Salomón (1 Reyes 6:38).</li>
+                        <li><b>Día 17, 2348 a.C:</b> Inicio del Diluvio universal (Génesis 7:11).</li>
+                        <li><b>Día 27, 2347 a.C:</b> Noé sale del Arca, tierra seca (Génesis 8:14).</li>
+                        <li><b>Día 15, 930 a.C:</b> Altar falso de Jeroboam en Betel (1 Reyes 12:32).</li>
+                        <li><b>Día 7, Anual:</b> Oración por la lluvia temprana en Israel.</li>
+                        <li><b>Día 23, 164 a.C:</b> Limpieza del Templo por Macabeos.</li>
+                        <li><b>Dato:</b> Llamado originalmente el mes de Bul.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>9. Quisleu (Noviembre - Diciembre)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 7, 605 a.C:</b> El rey Joacim quema el rollo (Jeremías 36:22).</li>
+                        <li><b>Día 25, 164 a.C:</b> Fiesta de Janucá (Juan 10:22).</li>
+                        <li><b>Día 24, 520 a.C:</b> Cimientos del Segundo Templo (Hageo 2:18).</li>
+                        <li><b>Día 20, 458 a.C:</b> El pueblo tiembla bajo la lluvia (Esdras 10:9).</li>
+                        <li><b>Día 15, 167 a.C:</b> Abominación en el lugar santo.</li>
+                        <li><b>Día 4, 518 a.C:</b> Palabra de Dios a Zacarías (Zacarías 7:1).</li>
+                        <li><b>Dato:</b> Mes de frío e invierno riguroso.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>10. Tebet (Diciembre - Enero)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 10, 588 a.C:</b> Inicio del sitio final de Jerusalén (2 Reyes 25:1).</li>
+                        <li><b>Día 1, 479 a.C:</b> Ester es coronada reina (Ester 2:16).</li>
+                        <li><b>Día 1, 2348 a.C:</b> Se ven los montes tras el diluvio (Génesis 8:5).</li>
+                        <li><b>Día 20, 458 a.C:</b> Purificación de matrimonios (Esdras 10:16).</li>
+                        <li><b>Día 10, Anual:</b> Ayuno por el asedio de Babilonia.</li>
+                        <li><b>Día 25, 1445 a.C:</b> La gloria llena el Tabernáculo.</li>
+                        <li><b>Dato:</b> Mes de oscuridad y asedio histórico.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>11. Shevat (Enero - Febrero)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 1, 1406 a.C:</b> Moisés predica Deuteronomio (Deut. 1:3).</li>
+                        <li><b>Día 15, Anual:</b> Año nuevo de los árboles (tradición).</li>
+                        <li><b>Día 24, 519 a.C:</b> Visión de Zacarías (Zacarías 1:7).</li>
+                        <li><b>Día 2, 1406 a.C:</b> Explicación profunda de la Ley.</li>
+                        <li><b>Día 28, 163 a.C:</b> Se levanta el sitio contra Macabeos.</li>
+                        <li><b>Día 1, Anual:</b> Comienza a florecer el almendro.</li>
+                        <li><b>Dato:</b> Mes de la renovación vegetal.</li>
+                    </ul>
+                </div>
+            </details>
+
+            <details class="month-detail">
+                <summary>12. Adar (Febrero - Marzo)</summary>
+                <div class="month-content">
+                    <ul>
+                        <li><b>Día 13, 473 a.C:</b> Los judíos vencen a sus enemigos (Ester 9:1).</li>
+                        <li><b>Día 14, 473 a.C:</b> Primera Fiesta de Purim (Ester 9:21).</li>
+                        <li><b>Día 7, 1406 a.C:</b> Muerte de Moisés (Deuteronomio 34:5).</li>
+                        <li><b>Día 3, 515 a.C:</b> Termina el Segundo Templo (Esdras 6:15).</li>
+                        <li><b>Día 1, 561 a.C:</b> Joaquín es liberado (Jeremías 52:31).</li>
+                        <li><b>Día 25, 561 a.C:</b> Joaquín come en mesa real.</li>
+                        <li><b>Dato:</b> Mes de máxima alegría y milagros.</li>
+                    </ul>
+                </div>
+            </details>
+        </div>
+    </details>
+</section>
+
+<style>
+/* Estilo del Acordeón Principal (Un solo desplegable al inicio) */
+.main-accordion {
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.main-summary {
+    background: var(--primary);
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+}
+.badge {
+    background: white;
+    color: var(--primary);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+.accordion-container {
+    padding: 10px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Estilo de los Meses (Sub-desplegables) */
+.month-detail {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.month-detail summary {
+    padding: 10px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    list-style: none;
+}
+.month-content {
+    padding: 10px;
+    font-size: 0.9rem;
+    background: #f9f9f9;
+    border-top: 1px solid #eee;
+}
+.month-content ul {
+    margin: 0;
+    padding-left: 20px;
+}
+.month-content li {
+    margin-bottom: 8px;
+}
+</style>
+
+
+        <footer>
+            <p>© 2026 BibliaMetrics - Basado en la Tabla de Cronología Owens</p>
+            <p><small>Estudio de Cursos Biblia Nixon</small></p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleMenuPrincipal() {
+            const panel = document.getElementById('panelAcciones');
+            const trigger = document.getElementById('menuTrigger');
+            
+            if (panel.style.display === "none") {
+                panel.style.display = "flex";
+                trigger.innerHTML = "❌ <span>Cerrar</span>";
+                trigger.style.background = "#c62828"; // Color de alerta/cerrar
+            } else {
+                panel.style.display = "none";
+                trigger.innerHTML = "⚙️ <span>Herramientas</span>";
+                trigger.style.background = "var(--primary)";
+            }
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
